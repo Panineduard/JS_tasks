@@ -1,0 +1,58 @@
+let DATA_URL = "https://jsonplaceholder.typicode.com";
+
+function Provider(id) {
+    this.id = id;
+    this.todoItem = getTodo(id);
+}
+
+async function getTodo(id) {
+    if (!id) {
+        return null;
+    }
+    let item = cacheService.getItemFromCache(id);
+    if (item) {
+        return item;
+    }
+
+    await dataService.getItemById(id)
+        .then(
+            result => {
+                item = result;
+            },
+            error => {
+                console.log("Something went wrong.");
+            }
+        );
+    return item;
+}
+
+let cacheService = {
+    getItemFromCache: (id) => {
+        let cachedValue = localStorage.getItem(id);
+        return cachedValue ? JSON.parse(cachedValue) : null;
+    },
+    setItemToCache: function (id, body) {
+        if (!id || !body) {
+            return;
+        }
+
+        localStorage.setItem(id, JSON.stringify(body));
+    }
+};
+
+let dataService = {
+    getItemById: function (id) {
+        return new Promise(function (resolve, reject) {
+            fetch('https://jsonplaceholder.typicode.com/todos/1')
+                .then(response => response.json())
+                .then(json => resolve(json));
+        });
+    }
+};
+
+window.onload = function () {
+    debugger;
+    console.log(new Provider(1).todoItem);
+    // console.log(new Provider(2).todoItem);
+    // console.log(new Provider(1).todoItem);
+};
