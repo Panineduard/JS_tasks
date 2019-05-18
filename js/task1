@@ -1,29 +1,29 @@
 let DATA_URL = "https://jsonplaceholder.typicode.com";
 
-function Provider(id) {
+function Provider(id, callback) {
     this.id = id;
-    this.todoItem = getTodo(id);
+    this.todoItem = initTodoItem(id, callback);
 }
 
-async function getTodo(id) {
-    if (!id) {
-        return null;
+function initTodoItem(id, callback) {
+    if (!id || !callback || !callback instanceof Function) {
+        return;
     }
     let item = cacheService.getItemFromCache(id);
     if (item) {
-        return item;
+        callback(item);
+        return;
     }
 
-    await dataService.getItemById(id)
-        .then(
-            result => {
-                item = result;
-            },
-            error => {
-                console.log("Something went wrong.");
-            }
-        );
-    return item;
+    dataService.getItemById(id, callback).then(
+        result => {
+            callback(result.title);
+            cacheService.setItemToCache(id, result.title);
+        },
+        error => {
+            console.log("Something went wrong.");
+        }
+    );
 }
 
 let cacheService = {
@@ -43,16 +43,18 @@ let cacheService = {
 let dataService = {
     getItemById: function (id) {
         return new Promise(function (resolve, reject) {
-            fetch('https://jsonplaceholder.typicode.com/todos/1')
+            fetch(DATA_URL + "/todos/" + id)
                 .then(response => response.json())
                 .then(json => resolve(json));
         });
     }
 };
 
-window.onload = function () {
-    debugger;
-    console.log(new Provider(1).todoItem);
-    // console.log(new Provider(2).todoItem);
-    // console.log(new Provider(1).todoItem);
-};
+function runLogic() {
+    let itemIdInput = document.getElementById("itemId");
+    if (itemIdInput && itemIdInput.value && Number.isInteger(+itemIdInput.value)) {
+        new Provider(itemIdInput.value, console.log);
+    } else {
+        console.log("wrong input");
+    }
+}
