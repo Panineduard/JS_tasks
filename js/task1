@@ -1,44 +1,31 @@
 let DATA_URL = "https://jsonplaceholder.typicode.com";
+let provider = new Provider();
 
-function Provider(id, callback) {
-    this.id = id;
-    this.todoItem = initTodoItem(id, callback);
+function Provider() {
+    this.cachedData = {};
+    this.showItem = initTodoItem;
 }
 
 function initTodoItem(id, callback) {
     if (!id || !callback || !callback instanceof Function) {
         return;
     }
-    let item = cacheService.getItemFromCache(id);
-    if (item) {
-        callback(item);
+
+    if (this.cachedData[id]) {
+        callback(this.cachedData[id]);
         return;
     }
 
     dataService.getItemById(id, callback).then(
         result => {
             callback(result.title);
-            cacheService.setItemToCache(id, result.title);
+            this.cachedData[id] = result.title;
         },
         error => {
             console.log("Something went wrong.");
         }
     );
 }
-
-let cacheService = {
-    getItemFromCache: (id) => {
-        let cachedValue = localStorage.getItem(id);
-        return cachedValue ? JSON.parse(cachedValue) : null;
-    },
-    setItemToCache: function (id, body) {
-        if (!id || !body) {
-            return;
-        }
-
-        localStorage.setItem(id, JSON.stringify(body));
-    }
-};
 
 let dataService = {
     getItemById: function (id) {
@@ -53,8 +40,13 @@ let dataService = {
 function runLogic() {
     let itemIdInput = document.getElementById("itemId");
     if (itemIdInput && itemIdInput.value && Number.isInteger(+itemIdInput.value)) {
-        new Provider(itemIdInput.value, console.log);
+       provider = provider || new Provider();
+       provider.showItem(+itemIdInput.value, console.log);
     } else {
         console.log("wrong input");
     }
+}
+
+function resetProvider() {
+    provider = new Provider();
 }
